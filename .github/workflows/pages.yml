@@ -1,0 +1,45 @@
+name: deploy-pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    permissions:
+      actions: read
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout static release
+        uses: actions/checkout@v4
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Stamp deployed version
+        shell: bash
+        run: |
+          deployed_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          jq --arg commit "$GITHUB_SHA" --arg deployed_at "$deployed_at" \
+            '.deployed_commit = $commit | .deployed_at = $deployed_at | .status = "published"' \
+            public/version.json > public/version.json.tmp
+          mv public/version.json.tmp public/version.json
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
