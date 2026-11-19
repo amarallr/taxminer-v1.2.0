@@ -36,6 +36,12 @@ jobs:
             '.deployed_commit = $commit | .deployed_at = $deployed_at | .status = "published"' \
             public/version.json > public/version.json.tmp
           mv public/version.json.tmp public/version.json
+          if [ -f public/painel-v1.1.1/version.json ]; then
+            jq --arg commit "$GITHUB_SHA" --arg deployed_at "$deployed_at" \
+              '.environment = "github_pages_legacy" | .deployed_commit = $commit | .deployed_at = $deployed_at | .status = "published"' \
+              public/painel-v1.1.1/version.json > public/painel-v1.1.1/version.json.tmp
+            mv public/painel-v1.1.1/version.json.tmp public/painel-v1.1.1/version.json
+          fi
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
